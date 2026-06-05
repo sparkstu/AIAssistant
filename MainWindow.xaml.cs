@@ -416,129 +416,353 @@ namespace WpfDemo
             (async function() {
                 var r = { step: 'start', tab: '__TAB__' };
                 var text = null;
+
+                function wait(ms) {
+                    return new Promise(function(resolve) { setTimeout(resolve, ms); });
+                }
+
+                function isVisible(el) {
+                    if (!el) return false;
+                    var rect = el.getBoundingClientRect();
+                    return el.offsetParent !== null || (rect.width > 0 && rect.height > 0);
+                }
+
+                function dispatchInputEvent(el, type, inputType, data) {
+                    try {
+                        el.dispatchEvent(new InputEvent(type, {
+                            bubbles: true,
+                            cancelable: type === 'beforeinput',
+                            composed: true,
+                            inputType: inputType,
+                            data: data
+                        }));
+                    } catch (e) {
+                        el.dispatchEvent(new Event(type, { bubbles: true, cancelable: type === 'beforeinput', composed: true }));
+                    }
+                }
+
+                function setNativeValue(el, value) {
+                    var proto = el.tagName === 'TEXTAREA'
+                        ? window.HTMLTextAreaElement.prototype
+                        : window.HTMLInputElement.prototype;
+                    var descriptor = Object.getOwnPropertyDescriptor(proto, 'value');
+                    if (descriptor && descriptor.set) {
+                        descriptor.set.call(el, value);
+                    } else {
+                        el.value = value;
+                    }
+                }
+
+                function selectEditableContent(el, collapseToEnd) {
+                    var selection = window.getSelection();
+                    if (!selection) return;
+                    var range = document.createRange();
+                    range.selectNodeContents(el);
+                    if (collapseToEnd) {
+                        range.collapse(false);
+                    }
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+
+                function getInputSnapshot(el) {
+                    if (!el) return '';
+                    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+                        return el.value || '';
+                    }
+                    if (isKimiEditor(el) && typeof el.__lexicalTextContent === 'string') {
+                        return el.__lexicalTextContent || '';
+                    }
+                    return (el.innerText || el.textContent || '').trim();
+                }
+
+                function normalizeText(value) {
+                    return (value || '').replace(/\s+/g, ' ').trim();
+                }
+
+                function isKimiEditor(el) {
+                    var cls = (el && el.className ? String(el.className) : '').toLowerCase();
+                    return '__TAB__' === 'Kimi' || cls.includes('chat-input-editor') || cls.includes('lexical');
+                }
+
+                function buildKimiEditorStateJson(value) {
+                    var lines = String(value || '').replace(/\r\n/g, '\n').split('\n');
+                    var root = {
+                        children: [],
+                        direction: 'ltr',
+                        format: '',
+                        indent: 0,
+                        type: 'root',
+                        version: 1
+                    };
+
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i];
+                        var paragraph = {
+                            children: [],
+                            direction: 'ltr',
+                            format: '',
+                            indent: 0,
+                            type: 'paragraph',
+                            version: 1,
+                            textFormat: 0
+                        };
+
+                        if (line) {
+                            paragraph.children.push({
+                                detail: 0,
+                                format: 0,
+                                mode: 'normal',
+                                style: '',
+                                text: line,
+                                type: 'text',
+                                version: 1
+                            });
+                        }
+
+                        root.children.push(paragraph);
+                    }
+
+                    if (root.children.length === 0) {
+                        root.children.push({
+                            children: [],
+                            direction: 'ltr',
+                            format: '',
+                            indent: 0,
+                            type: 'paragraph',
+                            version: 1,
+                            textFormat: 0
+                        });
+                    }
+
+                    return JSON.stringify({ root: root });
+                }
+
+                function isButtonEnabled(el) {
+                    if (!el || !isVisible(el)) return false;
+                    var ariaDisabled = (el.getAttribute('aria-disabled') || '').toLowerCase();
+                    var cls = (el.className || '').toString().toLowerCase();
+                    return !el.disabled &&
+                        ariaDisabled !== 'true' &&
+                        !cls.includes('disabled') &&
+                        !cls.includes('disable');
+                }
+
+                function findSendButton(input) {
+                    var btn = null;
+                    var btnMethod = '';
+                    var selectors = [
+                        '#flow-end-msg-send',
+                        'button[type="submit"]',
+                        '#send-message-button',
+                        '.send-button',
+                        'button[class*="send"]',
+                        'button[class*="Send"]',
+                        'button[aria-label*="send" i]',
+                        'button[aria-label*="Send" i]',
+                        'button[aria-label*="发送"]',
+                        'div[role="button"][aria-label*="send" i]',
+                        'div[role="button"][aria-label*="发送"]',
+                        'div[role="button"][class*="send"]'
+                    ];
+
+                    for (var s = 0; s < selectors.length; s++) {
+                        try { btn = document.querySelector(selectors[s]); } catch(e) {}
+                        if (isButtonEnabled(btn)) {
+                            btnMethod = 'selector:' + selectors[s].substring(0, 30);
+                            return { button: btn, method: btnMethod };
+                        }
+                    }
+
+                    var allBtns = document.querySelectorAll('button, div[role="button"], span[role="button"]');
+                    for (var j = 0; j < allBtns.length; j++) {
+                        if (!isButtonEnabled(allBtns[j])) continue;
+                        var label = (allBtns[j].getAttribute('aria-label') || '').toLowerCase();
+                        var inner = (allBtns[j].innerText || allBtns[j].textContent || '').toLowerCase().trim();
+                        if (label.includes('send') || label.includes('发送') || inner === '发送' || inner === 'send') {
+                            return { button: allBtns[j], method: 'text' };
+                        }
+                    }
+
+                    var parent = input ? input.parentElement : null;
+                    for (var depth = 0; depth < 6 && parent; depth++) {
+                        var nearby = parent.querySelectorAll('button, div[role="button"], span[role="button"]');
+                        for (var k = 0; k < nearby.length; k++) {
+                            if (!isButtonEnabled(nearby[k])) continue;
+                            var btnText = (nearby[k].innerText || nearby[k].textContent || '').trim();
+                            if (btnText.length <= 4 && btnText.length > 0 && !/^[0-9]+$/.test(btnText) && btnText !== '×') {
+                                return { button: nearby[k], method: 'nearby:text=' + btnText };
+                            }
+                            if (nearby[k].querySelector('svg, img, [class*="arrow"], [class*="plane"], [class*="send"]')) {
+                                return { button: nearby[k], method: 'nearby:icon' };
+                            }
+                        }
+                        parent = parent.parentElement;
+                    }
+
+                    return { button: null, method: '' };
+                }
+
+                function insertIntoEditor(input, value) {
+                    input.focus();
+                    input.click();
+
+                    if (input.tagName === 'TEXTAREA' || input.tagName === 'INPUT') {
+                        dispatchInputEvent(input, 'beforeinput', 'insertText', value);
+                        setNativeValue(input, value);
+                        input.setSelectionRange(value.length, value.length);
+                        dispatchInputEvent(input, 'input', 'insertText', value);
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        return;
+                    }
+
+                    if (isKimiEditor(input)) {
+                        var editor = input.__lexicalEditor;
+                        if (editor && typeof editor.parseEditorState === 'function' && typeof editor.setEditorState === 'function') {
+                            editor.focus();
+                            editor.setEditorState(editor.parseEditorState(buildKimiEditorStateJson(value)));
+                            selectEditableContent(input, true);
+                            input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                            return;
+                        }
+
+                        var paragraph = document.createElement('p');
+                        paragraph.setAttribute('dir', 'ltr');
+                        paragraph.textContent = value;
+                        input.innerHTML = '';
+                        input.appendChild(paragraph);
+                        selectEditableContent(input, true);
+                        input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        return;
+                    }
+
+                    selectEditableContent(input, false);
+                    dispatchInputEvent(input, 'beforeinput', 'insertText', value);
+
+                    var inserted = false;
+                    try {
+                        inserted = document.execCommand('selectAll', false, null);
+                        inserted = document.execCommand('insertText', false, value) || inserted;
+                    } catch (e) {}
+
+                    if (!inserted) {
+                        input.innerHTML = '';
+                        input.textContent = value;
+                    }
+
+                    selectEditableContent(input, true);
+                    dispatchInputEvent(input, 'input', 'insertText', value);
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                function sendByEnter(input) {
+                    var keOpts = {
+                        key: 'Enter',
+                        code: 'Enter',
+                        keyCode: 13,
+                        which: 13,
+                        bubbles: true,
+                        cancelable: true,
+                        composed: true
+                    };
+                    input.dispatchEvent(new KeyboardEvent('keydown', keOpts));
+                    document.dispatchEvent(new KeyboardEvent('keydown', keOpts));
+                    input.dispatchEvent(new KeyboardEvent('keypress', keOpts));
+                    document.dispatchEvent(new KeyboardEvent('keypress', keOpts));
+                    input.dispatchEvent(new KeyboardEvent('keyup', keOpts));
+                    document.dispatchEvent(new KeyboardEvent('keyup', keOpts));
+                }
+
+                function clickSendButton(button) {
+                    if (!button) return;
+                    button.scrollIntoView({ block: 'center', inline: 'center' });
+                    button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true, pointerType: 'mouse' }));
+                    button.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, composed: true }));
+                    button.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, composed: true, pointerType: 'mouse' }));
+                    button.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, composed: true }));
+                    button.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+                }
+
                 try {
                     var bytes = Uint8Array.from(atob('__BASE64__'), function(c) { return c.charCodeAt(0); });
                     text = new TextDecoder().decode(bytes);
                 } catch(e) {
-                    r.step = 'decode_error'; r.error = e.message; return JSON.stringify(r);
+                    r.step = 'decode_error';
+                    r.error = e.message;
+                    return JSON.stringify(r);
                 }
                 r.textLen = text.length;
 
-                /* 步骤1: 找输入框 */
                 var input = null;
                 var candidates = document.querySelectorAll('textarea:not([readonly]):not([disabled]), [contenteditable="true"]:not([readonly]), div[role="textbox"], [contenteditable]:not([contenteditable="false"])');
                 for (var i = 0; i < candidates.length; i++) {
-                    if (candidates[i].offsetParent !== null) { input = candidates[i]; break; }
+                    if (isVisible(candidates[i])) {
+                        input = candidates[i];
+                        break;
+                    }
                 }
                 if (!input) input = document.querySelector('textarea');
-                if (!input) { r.step = 'no_input'; r.candidates = candidates.length; return JSON.stringify(r); }
+                if (!input) {
+                    r.step = 'no_input';
+                    r.candidates = candidates.length;
+                    return JSON.stringify(r);
+                }
 
                 r.inputTag = input.tagName;
                 r.inputId = input.id || '';
-                r.inputClass = (input.className || '').substring(0, 50);
+                r.inputClass = (input.className || '').substring(0, 80);
 
-                /* 步骤2: 填入文字 */
-                input.focus();
-                input.click();
+                insertIntoEditor(input, text);
+                await wait(80);
 
-                if (input.tagName === 'TEXTAREA' || input.tagName === 'INPUT') {
-                    var proto = input.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
-                    Object.getOwnPropertyDescriptor(proto, 'value').set.call(input, text);
-                } else {
-                    input.innerText = text;
-                }
-                input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
+                var snapshot = getInputSnapshot(input);
                 r.step = 'text_inserted';
+                r.inputSnapshot = snapshot.substring(0, 80);
+                r.snapshotLen = snapshot.length;
 
-                /* 步骤3: 找发送按钮 (等一小会让 UI 响应文字变化) */
-                await new Promise(function(res) { setTimeout(res, 500); });
-
-                var btn = null;
-                var btnMethod = '';
-
-                /* 策略A: 精确选择器 */
-                var selectors = [
-                    '#flow-end-msg-send[aria-disabled="false"]',
-                    'button[type="submit"]:not([disabled])',
-                    'div[role="button"][aria-disabled="false"]',
-                    '.send-button:not(.disabled)',
-                    '#send-message-button:not([disabled])',
-                    'button[class*="send"]:not([disabled])',
-                    'button[class*="Send"]:not([disabled])',
-                    'button[aria-label*="send" i]:not([disabled])',
-                    'button[aria-label*="Send" i]:not([disabled])',
-                    'div[role="button"][class*="send"]'
-                ];
-                for (var s = 0; s < selectors.length; s++) {
-                    try { btn = document.querySelector(selectors[s]); } catch(e) {}
-                    if (btn) { btnMethod = 'selector:' + selectors[s].substring(0,30); break; }
+                var normalizedSnapshot = normalizeText(snapshot);
+                var normalizedText = normalizeText(text);
+                if (!normalizedSnapshot) {
+                    insertIntoEditor(input, text);
+                    await wait(180);
+                    snapshot = getInputSnapshot(input);
+                    normalizedSnapshot = normalizeText(snapshot);
+                    r.inputSnapshot = snapshot.substring(0, 80);
+                    r.snapshotLen = snapshot.length;
                 }
 
-                /* 策略B: 遍历所有按钮找发送文字 */
-                if (!btn) {
-                    var allBtns = document.querySelectorAll('button:not([disabled]), div[role="button"], span[role="button"]');
-                    for (var j = 0; j < allBtns.length; j++) {
-                        if (allBtns[j].offsetParent === null) continue;
-                        var label = (allBtns[j].getAttribute('aria-label') || '').toLowerCase();
-                        var inner = (allBtns[j].innerText || allBtns[j].textContent || '').toLowerCase().trim();
-                        if (label.includes('send') || label.includes('发送') ||
-                            inner === '发送' || inner === 'send') {
-                            btn = allBtns[j]; btnMethod = 'text'; break;
-                        }
-                    }
+                r.snapshotNormalized = normalizedSnapshot.substring(0, 80);
+                r.textNormalized = normalizedText.substring(0, 80);
+
+                if (isKimiEditor(input)) {
+                    sendByEnter(input);
+                    r.step = 'kimi_enter';
+                    r.enterTarget = input.tagName;
+                    return JSON.stringify(r);
                 }
 
-                /* 策略C: 在输入框父级附近找按钮 (很多网站把按钮放在输入框旁边) */
-                if (!btn) {
-                    var parent = input.parentElement;
-                    for (var depth = 0; depth < 5 && parent; depth++) {
-                        var nearby = parent.querySelectorAll('button, div[role="button"], span[role="button"]');
-                        for (var k = 0; k < nearby.length; k++) {
-                            if (nearby[k].offsetParent === null) continue;
-                            var text = (nearby[k].innerText || nearby[k].textContent || '').trim();
-                            var aria = nearby[k].getAttribute('aria-label') || '';
-                            if (text.length <= 4 && text.length > 0 && !text.match(/^[0-9]+$/) && text !== '×') {
-                                btn = nearby[k]; btnMethod = 'nearby:innerText=' + text; break;
-                            }
-                            if (nearby[k].querySelector('svg, img, [class*="arrow"], [class*="plane"], [class*="send"]')) {
-                                btn = nearby[k]; btnMethod = 'nearby:hasIcon'; break;
-                            }
-                        }
-                        if (btn) break;
-                        parent = parent.parentElement;
-                    }
+                var btnInfo = { button: null, method: '' };
+                for (var attempt = 0; attempt < 8; attempt++) {
+                    btnInfo = findSendButton(input);
+                    if (btnInfo.button) break;
+                    await wait(200);
                 }
 
-                /* 策略D: 在输入框上按 Enter (React 兼容) */
-                if (!btn) {
-                    // React 16+ 用 root 节点上的事件委托, 需要 keyDown + keyUp
-                    var keOpts = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true, composed: true };
-                    input.dispatchEvent(new KeyboardEvent('keydown', keOpts));
-                    // 同时在 document 上触发 (某些框架在 document 上监听)
-                    document.dispatchEvent(new KeyboardEvent('keydown', keOpts));
-                    await new Promise(function(res) { setTimeout(res, 50); });
-                    input.dispatchEvent(new KeyboardEvent('keypress', keOpts));
-                    document.dispatchEvent(new KeyboardEvent('keypress', keOpts));
-                    await new Promise(function(res) { setTimeout(res, 50); });
-                    input.dispatchEvent(new KeyboardEvent('keyup', keOpts));
-                    document.dispatchEvent(new KeyboardEvent('keyup', keOpts));
-
+                if (!btnInfo.button) {
+                    sendByEnter(input);
                     r.step = 'enter_key';
                     r.enterTarget = input.tagName;
-                } else {
-                    /* 点击发送按钮 */
-                    btn.click();
-                    // 有些按钮是 div/span, 需要 mousedown/mouseup/click 序列
-                    btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                    btn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-                    btn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-                    r.step = 'clicked';
-                    r.btnMethod = btnMethod;
-                    r.btnTag = btn.tagName;
-                    r.btnText = (btn.getAttribute('aria-label') || btn.innerText || '').substring(0, 30);
+                    return JSON.stringify(r);
                 }
 
+                clickSendButton(btnInfo.button);
+
+                r.step = 'clicked';
+                r.btnMethod = btnInfo.method;
+                r.btnTag = btnInfo.button.tagName;
+                r.btnText = (btnInfo.button.getAttribute('aria-label') || btnInfo.button.innerText || '').substring(0, 30);
                 return JSON.stringify(r);
             })();
             """;
