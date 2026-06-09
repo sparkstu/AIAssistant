@@ -5,69 +5,68 @@
         Title="AI 助手" Height="900" Width="1400"
         Icon="Assets/AppIcon.ico"
         WindowStartupLocation="CenterScreen"
-        Background="#1a1a2e"
+        WindowStyle="None"
+        Background="#F3F4F6"
         SnapsToDevicePixels="True">
 
-    <Window.Resources>
-        <SolidColorBrush x:Key="BgPrimary" Color="#1a1a2e"/>
-        <SolidColorBrush x:Key="BgSurface" Color="#242438"/>
-        <SolidColorBrush x:Key="BgInput" Color="#2e2e44"/>
-        <SolidColorBrush x:Key="BorderColor" Color="#383852"/>
-        <SolidColorBrush x:Key="TextPrimary" Color="#e8e8f0"/>
-        <SolidColorBrush x:Key="TextSecondary" Color="#9898b0"/>
-        <SolidColorBrush x:Key="AccentColor" Color="#7c3aed"/>
-        <SolidColorBrush x:Key="AccentHover" Color="#8b5cf6"/>
-        <SolidColorBrush x:Key="SuccessColor" Color="#22c55e"/>
-        <SolidColorBrush x:Key="ErrorColor" Color="#ef4444"/>
-        <SolidColorBrush x:Key="WarningColor" Color="#f59e0b"/>
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" GlassFrameThickness="0" ResizeBorderThickness="6"/>
+    </WindowChrome.WindowChrome>
 
-        <!-- CheckBox 样式 -->
+    <Window.Resources>
+        <SolidColorBrush x:Key="BgWindow" Color="#F3F4F6"/>
+        <SolidColorBrush x:Key="BgPanel" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="BgPanelAlt" Color="#FAFBFC"/>
+        <SolidColorBrush x:Key="BgInput" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#E2E4E9"/>
+        <SolidColorBrush x:Key="BorderHover" Color="#C8CBD0"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#17181A"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#6B7280"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#9CA3AF"/>
+        <SolidColorBrush x:Key="AccentColor" Color="#6D5EF7"/>
+        <SolidColorBrush x:Key="AccentHover" Color="#7E70FF"/>
+
+        <Style x:Key="PanelBorder" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource BgPanel}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+        </Style>
+
         <Style TargetType="CheckBox">
             <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="0,0,2,0"/>
-            <Setter Property="Padding" Value="4,0"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
-                        <Border x:Name="CheckBorder"
+                        <Border x:Name="Chip"
                                 Background="Transparent"
-                                CornerRadius="6"
-                                Padding="8,4"
+                                BorderBrush="{StaticResource BorderColor}"
                                 BorderThickness="1"
-                                BorderBrush="Transparent"
-                                Cursor="Hand">
+                                CornerRadius="12"
+                                Padding="12,7">
                             <StackPanel Orientation="Horizontal">
-                                <Border x:Name="CheckBox"
-                                        Width="16" Height="16"
-                                        CornerRadius="3"
-                                        Background="#2e2e44"
-                                        BorderBrush="#505070"
-                                        BorderThickness="1"
-                                        Margin="0,0,8,0">
-                                    <Path x:Name="CheckMark"
-                                          Data="M4,8 L7,11 L12,5"
-                                          Stroke="#7c3aed"
-                                          StrokeThickness="2"
-                                          StrokeStartLineCap="Round"
-                                          StrokeEndLineCap="Round"
-                                          Visibility="Collapsed"/>
-                                </Border>
+                                <Ellipse x:Name="Dot"
+                                         Width="6"
+                                         Height="6"
+                                         Margin="0,0,8,0"
+                                         Fill="#666D78"
+                                         VerticalAlignment="Center"/>
                                 <ContentPresenter VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="CheckBox" Property="Background" Value="#2e1a5e"/>
-                                <Setter TargetName="CheckBox" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
-                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
-                                <Setter TargetName="CheckBorder" Property="Background" Value="#2a1a4e"/>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chip" Property="BorderBrush" Value="{StaticResource BorderHover}"/>
                                 <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
                             </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CheckBorder" Property="Background" Value="#28283e"/>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Chip" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                                <Setter TargetName="Chip" Property="Background" Value="#EDE9FE"/>
+                                <Setter TargetName="Dot" Property="Fill" Value="{StaticResource AccentColor}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -75,90 +74,28 @@
             </Setter>
         </Style>
 
-        <!-- 发送按钮 -->
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="20,8"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="8"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="{StaticResource AccentHover}"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="SecondaryButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource BgInput}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Padding" Value="14,8"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#38385a"/>
-                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#50508a"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- 小工具按钮 -->
         <Style x:Key="ToolButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Padding" Value="8,3"/>
+            <Setter Property="Padding" Value="10,7"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="ToolBorder"
+                        <Border x:Name="Border"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="4"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ToolBorder" Property="Background" Value="#2e2e46"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource BorderHover}"/>
                                 <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -167,7 +104,83 @@
             </Setter>
         </Style>
 
-        <!-- TextBox -->
+        <Style x:Key="TitleBarButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#E5E7EB"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CloseButton" TargetType="Button" BasedOn="{StaticResource TitleBarButton}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#EF4444"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="MinWidth" Value="86"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Border" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="TextBox">
             <Setter Property="Background" Value="{StaticResource BgInput}"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
@@ -183,16 +196,15 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10"
-                                Padding="2">
-                            <ScrollViewer x:Name="PART_ContentHost" Margin="8,0"/>
+                                CornerRadius="10">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="10,0"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="BorderBrush" Value="#50508a"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource BorderHover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -201,210 +213,326 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid Background="{StaticResource BgWindow}">
         <Grid.RowDefinitions>
+            <RowDefinition Height="36"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Row 0: 选择工具栏 -->
-        <Border Grid.Row="0" Background="#1f1f36" BorderBrush="#383852" BorderThickness="0,0,0,1"
-                Padding="10,6">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+        <!-- ═══ Title Bar (Row 0) ═══ -->
+        <Grid Grid.Row="0" Background="{StaticResource BgWindow}" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-                <!-- 左侧: 厂商选择 -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <CheckBox x:Name="chkDoubao"    Content="豆包"     Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
-                    <CheckBox x:Name="chkQianwen"   Content="千问"     Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
-                    <CheckBox x:Name="chkDeepSeek"  Content="DeepSeek" Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
-                    <CheckBox x:Name="chkKimi"      Content="Kimi"     Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
-                    <CheckBox x:Name="chkChatGLM"   Content="智谱清言" Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
-                    <CheckBox x:Name="chkYiyan"     Content="文心一言" Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
-                </StackPanel>
-
-                <!-- 中间: 发送目标提示 -->
-                <TextBlock Grid.Column="1" x:Name="targetHint" Text=""
-                           FontSize="12" Foreground="{StaticResource TextSecondary}"
-                           VerticalAlignment="Center" Margin="16,0,0,0"
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                <TextBlock Text="AI 助手"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimary}"/>
+                <TextBlock x:Name="targetHint"
+                           Margin="12,1,0,0"
+                           FontSize="11"
+                           Foreground="{StaticResource TextMuted}"
                            TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
 
-                <!-- 右侧: 全选/取消 -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="全选" Style="{StaticResource ToolButton}" Click="SelectAll_Click"/>
-                    <Button Content="取消" Style="{StaticResource ToolButton}" Click="DeselectAll_Click" Margin="2,0,0,0"/>
-                </StackPanel>
-            </Grid>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="全选"
+                        Style="{StaticResource ToolButton}"
+                        Padding="10,5"
+                        FontSize="12"
+                        Click="SelectAll_Click"/>
+                <Button Content="取消"
+                        Style="{StaticResource ToolButton}"
+                        Margin="6,0,0,0"
+                        Padding="10,5"
+                        FontSize="12"
+                        Click="DeselectAll_Click"/>
+                <Separator Width="1" Background="{StaticResource BorderColor}" Margin="12,8,12,8"/>
+
+                <!-- Window Controls -->
+                <Button x:Name="btnMinimize"
+                        Content="─"
+                        Style="{StaticResource TitleBarButton}"
+                        ToolTip="最小化"
+                        Click="Minimize_Click"/>
+                <Button x:Name="btnFullscreen"
+                        Content="⛶"
+                        Style="{StaticResource TitleBarButton}"
+                        ToolTip="全屏 (F11)"
+                        Click="FullscreenToggle_Click"/>
+                <Button x:Name="btnClose"
+                        Content="✕"
+                        Style="{StaticResource CloseButton}"
+                        ToolTip="关闭"
+                        Click="Close_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ═══ Vendor Checkboxes (Row 1) ═══ -->
+        <Border Grid.Row="1"
+                Style="{StaticResource PanelBorder}"
+                Padding="12,8"
+                Margin="14,0,14,10">
+            <WrapPanel>
+                <CheckBox x:Name="chkDoubao" Content="豆包" Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
+                <CheckBox x:Name="chkQianwen" Content="千问" Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
+                <CheckBox x:Name="chkDeepSeek" Content="DeepSeek" Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
+                <CheckBox x:Name="chkKimi" Content="Kimi" Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
+                <CheckBox x:Name="chkChatGLM" Content="智谱清言" Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
+                <CheckBox x:Name="chkYiyan" Content="文心一言" Checked="VendorCheck_Changed" Unchecked="VendorCheck_Changed"/>
+            </WrapPanel>
         </Border>
 
-        <!-- Row 1: WebView2 内容区域 -->
-        <Grid x:Name="webViewHost" Grid.Row="1" Background="#1a1a2e">
-            <!-- 豆包 -->
-            <Border x:Name="panelDoubao" Visibility="Collapsed">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Border Background="#242438" BorderBrush="#7c3aed" BorderThickness="0,0,0,2"
-                            Padding="10,5">
-                        <TextBlock Text="豆包" FontSize="13" FontWeight="SemiBold" Foreground="#e8e8f0"/>
+        <!-- ═══ WebView (Row 2) ═══ -->
+        <Border Grid.Row="2"
+                Style="{StaticResource PanelBorder}"
+                Padding="8"
+                Margin="14,0,14,12">
+            <Grid x:Name="webViewHost" Background="Transparent">
+                    <Border x:Name="panelDoubao"
+                            Visibility="Collapsed"
+                            Margin="4"
+                            Background="{StaticResource BgPanelAlt}"
+                            BorderBrush="{StaticResource BorderColor}"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="36"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Background="#F3F4F6"
+                                    BorderBrush="{StaticResource BorderColor}"
+                                    BorderThickness="0,0,0,1"
+                                    CornerRadius="10,10,0,0"
+                                    Padding="12,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="6" Height="6" Fill="#7C5CFF" VerticalAlignment="Center"/>
+                                    <TextBlock Text="豆包" Margin="8,0,0,0" FontSize="12" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <wv2:WebView2 x:Name="webViewDoubao" Grid.Row="1" Source="https://www.doubao.com/chat/"/>
+                        </Grid>
                     </Border>
-                    <wv2:WebView2 x:Name="webViewDoubao" Grid.Row="1" Source="https://www.doubao.com/chat/"/>
+
+                    <Border x:Name="panelQianwen"
+                            Visibility="Collapsed"
+                            Margin="4"
+                            Background="{StaticResource BgPanelAlt}"
+                            BorderBrush="{StaticResource BorderColor}"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="36"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Background="#F3F4F6"
+                                    BorderBrush="{StaticResource BorderColor}"
+                                    BorderThickness="0,0,0,1"
+                                    CornerRadius="10,10,0,0"
+                                    Padding="12,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="6" Height="6" Fill="#3B82F6" VerticalAlignment="Center"/>
+                                    <TextBlock Text="千问" Margin="8,0,0,0" FontSize="12" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <wv2:WebView2 x:Name="webViewQianwen" Grid.Row="1" Source="https://www.qianwen.com/chat"/>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="panelDeepSeek"
+                            Visibility="Collapsed"
+                            Margin="4"
+                            Background="{StaticResource BgPanelAlt}"
+                            BorderBrush="{StaticResource BorderColor}"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="36"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Background="#F3F4F6"
+                                    BorderBrush="{StaticResource BorderColor}"
+                                    BorderThickness="0,0,0,1"
+                                    CornerRadius="10,10,0,0"
+                                    Padding="12,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="6" Height="6" Fill="#06B6D4" VerticalAlignment="Center"/>
+                                    <TextBlock Text="DeepSeek" Margin="8,0,0,0" FontSize="12" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <wv2:WebView2 x:Name="webViewDeepSeek" Grid.Row="1" Source="https://chat.deepseek.com/"/>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="panelKimi"
+                            Visibility="Collapsed"
+                            Margin="4"
+                            Background="{StaticResource BgPanelAlt}"
+                            BorderBrush="{StaticResource BorderColor}"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="36"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Background="#F3F4F6"
+                                    BorderBrush="{StaticResource BorderColor}"
+                                    BorderThickness="0,0,0,1"
+                                    CornerRadius="10,10,0,0"
+                                    Padding="12,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="6" Height="6" Fill="#22C55E" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Kimi" Margin="8,0,0,0" FontSize="12" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <wv2:WebView2 x:Name="webViewKimi" Grid.Row="1" Source="https://kimi.moonshot.cn/"/>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="panelChatGLM"
+                            Visibility="Collapsed"
+                            Margin="4"
+                            Background="{StaticResource BgPanelAlt}"
+                            BorderBrush="{StaticResource BorderColor}"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="36"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Background="#F3F4F6"
+                                    BorderBrush="{StaticResource BorderColor}"
+                                    BorderThickness="0,0,0,1"
+                                    CornerRadius="10,10,0,0"
+                                    Padding="12,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="6" Height="6" Fill="#F59E0B" VerticalAlignment="Center"/>
+                                    <TextBlock Text="智谱清言" Margin="8,0,0,0" FontSize="12" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <wv2:WebView2 x:Name="webViewChatGLM" Grid.Row="1" Source="https://chatglm.cn/"/>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="panelYiyan"
+                            Visibility="Collapsed"
+                            Margin="4"
+                            Background="{StaticResource BgPanelAlt}"
+                            BorderBrush="{StaticResource BorderColor}"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="36"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Background="#F3F4F6"
+                                    BorderBrush="{StaticResource BorderColor}"
+                                    BorderThickness="0,0,0,1"
+                                    CornerRadius="10,10,0,0"
+                                    Padding="12,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="6" Height="6" Fill="#EC4899" VerticalAlignment="Center"/>
+                                    <TextBlock Text="文心一言" Margin="8,0,0,0" FontSize="12" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <wv2:WebView2 x:Name="webViewYiyan" Grid.Row="1" Source="https://yiyan.baidu.com/"/>
+                        </Grid>
+                    </Border>
                 </Grid>
             </Border>
 
-            <!-- 千问 -->
-            <Border x:Name="panelQianwen" Visibility="Collapsed">
+            <Border Grid.Row="3"
+                    Style="{StaticResource PanelBorder}"
+                    Padding="10">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <Border Background="#242438" BorderBrush="#3b82f6" BorderThickness="0,0,0,2"
-                            Padding="10,5">
-                        <TextBlock Text="千问" FontSize="13" FontWeight="SemiBold" Foreground="#e8e8f0"/>
-                    </Border>
-                    <wv2:WebView2 x:Name="webViewQianwen" Grid.Row="1" Source="https://www.qianwen.com/chat"/>
-                </Grid>
-            </Border>
 
-            <!-- DeepSeek -->
-            <Border x:Name="panelDeepSeek" Visibility="Collapsed">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Border Background="#242438" BorderBrush="#06b6d4" BorderThickness="0,0,0,2"
-                            Padding="10,5">
-                        <TextBlock Text="DeepSeek" FontSize="13" FontWeight="SemiBold" Foreground="#e8e8f0"/>
-                    </Border>
-                    <wv2:WebView2 x:Name="webViewDeepSeek" Grid.Row="1" Source="https://chat.deepseek.com/"/>
-                </Grid>
-            </Border>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-            <!-- Kimi -->
-            <Border x:Name="panelKimi" Visibility="Collapsed">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Border Background="#242438" BorderBrush="#22c55e" BorderThickness="0,0,0,2"
-                            Padding="10,5">
-                        <TextBlock Text="Kimi" FontSize="13" FontWeight="SemiBold" Foreground="#e8e8f0"/>
-                    </Border>
-                    <wv2:WebView2 x:Name="webViewKimi" Grid.Row="1" Source="https://kimi.moonshot.cn/"/>
-                </Grid>
-            </Border>
+                        <Border Background="#F3F4F6"
+                                BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="10,8"
+                                Margin="0,0,10,0">
+                            <TextBlock x:Name="tabLabel"
+                                       Text="豆包"
+                                       Foreground="{StaticResource TextSecondary}"
+                                       FontSize="12"
+                                       VerticalAlignment="Center"/>
+                        </Border>
 
-            <!-- 智谱清言 -->
-            <Border x:Name="panelChatGLM" Visibility="Collapsed">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Border Background="#242438" BorderBrush="#f59e0b" BorderThickness="0,0,0,2"
-                            Padding="10,5">
-                        <TextBlock Text="智谱清言" FontSize="13" FontWeight="SemiBold" Foreground="#e8e8f0"/>
-                    </Border>
-                    <wv2:WebView2 x:Name="webViewChatGLM" Grid.Row="1" Source="https://chatglm.cn/"/>
-                </Grid>
-            </Border>
+                        <TextBox x:Name="inputBox"
+                                 Grid.Column="1"
+                                 AcceptsReturn="False"
+                                 VerticalContentAlignment="Center"
+                                 KeyDown="InputBox_KeyDown"
+                                 TextChanged="InputBox_TextChanged"
+                                 ToolTip="输入内容，按 Enter 发送到所有勾选的 AI"/>
 
-            <!-- 文心一言 -->
-            <Border x:Name="panelYiyan" Visibility="Collapsed">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Border Background="#242438" BorderBrush="#ec4899" BorderThickness="0,0,0,2"
-                            Padding="10,5">
-                        <TextBlock Text="文心一言" FontSize="13" FontWeight="SemiBold" Foreground="#e8e8f0"/>
-                    </Border>
-                    <wv2:WebView2 x:Name="webViewYiyan" Grid.Row="1" Source="https://yiyan.baidu.com/"/>
+                        <Button x:Name="sendButton"
+                                Grid.Column="2"
+                                Content="发送"
+                                Style="{StaticResource PrimaryButton}"
+                                Margin="8,0,0,0"
+                                Click="SendButton_Click"/>
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock x:Name="statusBar"
+                                       FontSize="12"
+                                       Foreground="{StaticResource TextSecondary}"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="debugOutput"
+                                       Margin="0,4,0,0"
+                                       FontSize="11"
+                                       FontFamily="Consolas"
+                                       Foreground="{StaticResource TextMuted}"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxHeight="18"
+                                       Visibility="Collapsed"
+                                       MouseLeftButtonDown="DebugOutput_Click"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="清空"
+                                   Margin="10,0,0,0"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextMuted}"
+                                   VerticalAlignment="Center"
+                                   Cursor="Hand"
+                                   Visibility="Collapsed"
+                                   x:Name="clearDebug"
+                                   MouseLeftButtonDown="ClearDebug_Click"/>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
-
-        <!-- Row 2: 底部输入区 -->
-        <Border Grid.Row="2" Background="{StaticResource BgSurface}"
-                BorderBrush="{StaticResource BorderColor}" BorderThickness="0,1,0,0">
-            <Grid Margin="12,10">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <!-- 输入行 -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Border Background="#2e2e4a" CornerRadius="6"
-                            Padding="8,0" Margin="0,0,10,0" VerticalAlignment="Stretch">
-                        <TextBlock x:Name="tabLabel" Text="豆包"
-                                   Foreground="{StaticResource AccentColor}"
-                                   FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    </Border>
-
-                    <TextBox x:Name="inputBox" Grid.Column="1"
-                             AcceptsReturn="False"
-                             VerticalContentAlignment="Center"
-                             KeyDown="InputBox_KeyDown"
-                             TextChanged="InputBox_TextChanged"
-                             ToolTip="输入内容，按 Enter 发送到所有勾选的 AI"/>
-
-                    <Button x:Name="diagnoseButton" Grid.Column="2" Content="诊断"
-                            Style="{StaticResource SecondaryButton}"
-                            Margin="10,0,0,0" Click="DiagnoseButton_Click"/>
-
-                    <Button x:Name="sendButton" Grid.Column="3" Content="发送"
-                            Style="{StaticResource PrimaryButton}"
-                            Margin="8,0,0,0" Click="SendButton_Click"/>
-                </Grid>
-
-                <!-- 状态 / 调试 -->
-                <Grid Grid.Row="1" Margin="0,6,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel>
-                        <TextBlock x:Name="statusBar" FontSize="12"
-                                   Foreground="{StaticResource TextSecondary}"
-                                   TextTrimming="CharacterEllipsis"/>
-                        <TextBlock x:Name="debugOutput" FontSize="11"
-                                   FontFamily="Consolas"
-                                   Foreground="#6a6a8a"
-                                   TextWrapping="NoWrap"
-                                   TextTrimming="CharacterEllipsis"
-                                   MaxHeight="18"
-                                   Visibility="Collapsed"
-                                   MouseLeftButtonDown="DebugOutput_Click"/>
-                    </StackPanel>
-
-                    <TextBlock Grid.Column="1" Text="清空" FontSize="11"
-                               Foreground="{StaticResource TextSecondary}"
-                               VerticalAlignment="Center" Cursor="Hand"
-                               Visibility="Collapsed"
-                               x:Name="clearDebug"
-                               MouseLeftButtonDown="ClearDebug_Click"/>
-                </Grid>
-            </Grid>
-        </Border>
-    </Grid>
 </Window>

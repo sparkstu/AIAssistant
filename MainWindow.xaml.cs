@@ -185,10 +185,10 @@ namespace WpfDemo
             statusBar.Text = message;
             statusBar.Foreground = type switch
             {
-                StatusType.Success => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#22c55e")),
-                StatusType.Error => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ef4444")),
-                StatusType.Warning => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#f59e0b")),
-                _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9898b0"))
+                StatusType.Success => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#16a34a")),
+                StatusType.Error => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dc2626")),
+                StatusType.Warning => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#d97706")),
+                _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"))
             };
 
             if (autoClearMs > 0)
@@ -234,14 +234,14 @@ namespace WpfDemo
                 debugOutput.MaxHeight = 200;
                 debugOutput.TextTrimming = TextTrimming.None;
                 debugOutput.TextWrapping = TextWrapping.Wrap;
-                debugOutput.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#a0a0c0"));
+                debugOutput.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
             }
             else
             {
                 debugOutput.MaxHeight = 18;
                 debugOutput.TextTrimming = TextTrimming.CharacterEllipsis;
                 debugOutput.TextWrapping = TextWrapping.NoWrap;
-                debugOutput.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6a6a8a"));
+                debugOutput.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9CA3AF"));
             }
         }
 
@@ -268,64 +268,6 @@ namespace WpfDemo
             }
         }
 
-        // ==================== 诊断 ====================
-
-        private async void DiagnoseButton_Click(object sender, RoutedEventArgs e)
-        {
-            var selected = GetSelected();
-            var target = selected[0]; // 诊断第一个选中的
-
-            if (target.WebView.CoreWebView2 == null)
-            {
-                SetStatus("WebView2 尚未初始化", StatusType.Warning, 3000);
-                return;
-            }
-
-            diagnoseButton.IsEnabled = false;
-            SetStatus($"诊断 {target.Name} 页面...", StatusType.Info);
-
-            try
-            {
-                var raw = await target.WebView.CoreWebView2.ExecuteScriptAsync(DiagnoseJs);
-                var json = UnescapeJsonResult(raw);
-                ShowDebug(json);
-                SetStatus($"{target.Name} 诊断完成", StatusType.Success, 5000);
-            }
-            catch (Exception ex)
-            {
-                ShowDebug($"异常: {ex.Message}");
-                SetStatus("诊断失败", StatusType.Error, 4000);
-            }
-            finally
-            {
-                diagnoseButton.IsEnabled = true;
-            }
-        }
-
-        private static string DiagnoseJs => """
-            (function() {
-                var info = {};
-                info.title = document.title;
-                info.url = window.location.href;
-                info.textareas = [];
-                document.querySelectorAll('textarea').forEach(function(ta) {
-                    info.textareas.push({id:ta.id,placeholder:ta.placeholder,className:(ta.className||'').substring(0,80),visible:ta.offsetParent!==null});
-                });
-                info.editables = [];
-                document.querySelectorAll('[contenteditable="true"],[contenteditable]').forEach(function(el) {
-                    if(el.getAttribute('contenteditable')==='false')return;
-                    info.editables.push({tag:el.tagName,id:el.id,className:(el.className||'').substring(0,80),visible:el.offsetParent!==null});
-                });
-                info.buttons = [];
-                document.querySelectorAll('button,[role="button"]').forEach(function(b) {
-                    var lbl=b.getAttribute('aria-label')||b.innerText||'';
-                    if(!lbl.trim())return;
-                    info.buttons.push({tag:b.tagName,label:lbl.substring(0,60),id:b.id,disabled:b.disabled,ariaDisabled:b.getAttribute('aria-disabled'),visible:b.offsetParent!==null});
-                });
-                return JSON.stringify(info);
-            })();
-            """;
-
         // ==================== 发送 ====================
 
         private async void SendMessage()
@@ -345,7 +287,6 @@ namespace WpfDemo
             }
 
             sendButton.IsEnabled = false;
-            diagnoseButton.IsEnabled = false;
             inputBox.IsEnabled = false;
             sendButton.Content = targets.Length > 1 ? $"发送×{targets.Length}" : "…";
 
@@ -353,24 +294,28 @@ namespace WpfDemo
             ShowDebug("");
 
             var base64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(text));
-            var results = new List<string>();
+            var outcomes = new List<(string Name, string Result, string? Error)>();
 
-            // 并发发送到所有目标
-            var tasks = targets.Select(async v =>
+            // 顺序发送更稳定，避免多 WebView 同时触发 Enter/焦点相关逻辑时互相干扰。
+            foreach (var v in targets)
             {
                 try
                 {
+                    v.WebView.Focus();
+                    await Task.Delay(120);
+
                     var raw = await v.WebView.CoreWebView2!.ExecuteScriptAsync(BuildSendJs(base64, v.Name));
                     var result = UnescapeJsonResult(raw);
-                    return (v.Name, Result: result, Error: (string?)null);
+                    outcomes.Add((v.Name, result, null));
+
+                    // 给页面一点时间处理输入和发送，降低多端连续发送时的时序冲突。
+                    await Task.Delay(180);
                 }
                 catch (Exception ex)
                 {
-                    return (v.Name, Result: "", Error: ex.Message);
+                    outcomes.Add((v.Name, "", ex.Message));
                 }
-            });
-
-            var outcomes = await Task.WhenAll(tasks);
+            }
 
             // 汇总结果
             var successCount = 0;
@@ -399,7 +344,6 @@ namespace WpfDemo
                 SetStatus($"{successCount} 成功 / {failCount} 失败", StatusType.Warning, 5000);
 
             sendButton.IsEnabled = true;
-            diagnoseButton.IsEnabled = true;
             inputBox.IsEnabled = true;
             sendButton.Content = "发送";
             inputBox.Focus();
@@ -485,6 +429,15 @@ namespace WpfDemo
                     return '__TAB__' === 'Kimi' || cls.includes('chat-input-editor') || cls.includes('lexical');
                 }
 
+                function isDeepSeekEditor(el) {
+                    var cls = (el && el.className ? String(el.className) : '').toLowerCase();
+                    return '__TAB__' === 'DeepSeek' || cls.includes('deepseek') || cls.includes('ds-');
+                }
+
+                function shouldPreferEnter(input) {
+                    return isKimiEditor(input) || isDeepSeekEditor(input);
+                }
+
                 function buildKimiEditorStateJson(value) {
                     var lines = String(value || '').replace(/\r\n/g, '\n').split('\n');
                     var root = {
@@ -551,6 +504,7 @@ namespace WpfDemo
                 function findSendButton(input) {
                     var btn = null;
                     var btnMethod = '';
+                    var preferEnter = shouldPreferEnter(input);
                     var selectors = [
                         '#flow-end-msg-send',
                         'button[type="submit"]',
@@ -593,7 +547,7 @@ namespace WpfDemo
                             if (btnText.length <= 4 && btnText.length > 0 && !/^[0-9]+$/.test(btnText) && btnText !== '×') {
                                 return { button: nearby[k], method: 'nearby:text=' + btnText };
                             }
-                            if (nearby[k].querySelector('svg, img, [class*="arrow"], [class*="plane"], [class*="send"]')) {
+                            if (!preferEnter && nearby[k].querySelector('svg, img, [class*="arrow"], [class*="plane"], [class*="send"]')) {
                                 return { button: nearby[k], method: 'nearby:icon' };
                             }
                         }
@@ -667,6 +621,7 @@ namespace WpfDemo
                         cancelable: true,
                         composed: true
                     };
+                    input.focus();
                     input.dispatchEvent(new KeyboardEvent('keydown', keOpts));
                     document.dispatchEvent(new KeyboardEvent('keydown', keOpts));
                     input.dispatchEvent(new KeyboardEvent('keypress', keOpts));
@@ -736,9 +691,9 @@ namespace WpfDemo
                 r.snapshotNormalized = normalizedSnapshot.substring(0, 80);
                 r.textNormalized = normalizedText.substring(0, 80);
 
-                if (isKimiEditor(input)) {
+                if (shouldPreferEnter(input)) {
                     sendByEnter(input);
-                    r.step = 'kimi_enter';
+                    r.step = isKimiEditor(input) ? 'kimi_enter' : 'vendor_enter';
                     r.enterTarget = input.tagName;
                     return JSON.stringify(r);
                 }
@@ -782,6 +737,73 @@ namespace WpfDemo
             s = s.Replace("\\t", "\t");
 
             return s;
+        }
+
+        // ==================== 窗口控制 ====================
+
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2 && WindowState != WindowState.Maximized)
+            {
+                WindowState = WindowState.Maximized;
+                btnFullscreen.Content = "⤡";
+                btnFullscreen.ToolTip = "退出全屏 (F11)";
+            }
+            else if (e.ClickCount == 2)
+            {
+                WindowState = WindowState.Normal;
+                btnFullscreen.Content = "⛶";
+                btnFullscreen.ToolTip = "全屏 (F11)";
+            }
+            else
+            {
+                DragMove();
+            }
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void FullscreenToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (WindowState == WindowState.Maximized)
+            {
+                WindowState = WindowState.Normal;
+                btnFullscreen.Content = "⛶";
+                btnFullscreen.ToolTip = "全屏 (F11)";
+            }
+            else
+            {
+                WindowState = WindowState.Maximized;
+                btnFullscreen.Content = "⤡";
+                btnFullscreen.ToolTip = "退出全屏 (F11)";
+            }
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.Key == Key.F11)
+            {
+                e.Handled = true;
+                FullscreenToggle_Click(this, e);
+                return;
+            }
+            if (e.Key == Key.Escape && WindowState == WindowState.Maximized)
+            {
+                e.Handled = true;
+                WindowState = WindowState.Normal;
+                btnFullscreen.Content = "⛶";
+                btnFullscreen.ToolTip = "全屏 (F11)";
+                return;
+            }
+            base.OnKeyDown(e);
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
